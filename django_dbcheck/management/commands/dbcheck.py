@@ -85,12 +85,14 @@ class Command(BaseCommand):
                     getattr(instance, field.name)
                     return True
                 except ObjectDoesNotExist:
-                    self.stdout(
-                        str(model_name(model)) + ' with pk ' +
-                        str(instance.pk) + ' refers via field ' +
-                        str(field.name) + ' to nonexistent ' +
-                        str(model_name(foreign_model)) + ' with pk ' +
-                        str(getattr(instance, field.attname))
+                    self.stdout.write(
+                        '%s with pk %d refers via field %s to nonexistent %s with pk %d' % (
+                            str(model_name(model)),
+                            instance.pk,
+                            str(field.name),
+                            str(model_name(foreign_model)),
+                            getattr(instance, field.attname),
+                        )
                     )
 
             return check_instance
