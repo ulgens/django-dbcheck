@@ -20,30 +20,47 @@ class Command(BaseCommand):
     """Extend the commands available to ./manage.py"""
 
     args = '[-e|--exclude app_name.ModelName]'
-    help = (
-        'Checks constraints in the database and reports violations on stdout')
+    # TODO: Add include option's message to 'args' but before read:
+    # https://docs.djangoproject.com/en/1.9/howto/custom-management-commands/#django.core.management.BaseCommand.args
+    help = ('Checks constraints in the database and reports violations on stdout')
 
-    option_list = NoArgsCommand.option_list + (make_option('-e', '--exclude',
-                                                           action='append', type='string', dest='exclude'),)
+    # FIXME: These two options are in conflict. Find a way better way to do same thing without a conflict.
+    option_list = NoArgsCommand.option_list + (
+        make_option('-e', '--exclude', action='append', type='string', dest='exclude'),
+        make_option('-i', '--include', action='append', type='string', dest='include'),
+    )
 
     def handle(self, *args, **options):
-
+        include = options.get('include', None) or []
         exclude = options.get('exclude', None) or []
 
         failed_instance_count = 0
         failed_model_count = 0
-        for app in models.get_apps():
-            for model in models.get_models(app):
-                if model_name(model) in exclude:
-                    self.stdout.write('Skipping model ' + str(model_name(model
-                                                                         )))
-                    continue
-                fail_count = self.check_model(model)
-                if fail_count > 0:
-                    failed_model_count += 1
-                    failed_instance_count += fail_count
-        self.stderr.write('Detected ' + str(failed_instance_count) +
-                          ' errors in ' + str(failed_model_count) + ' models')
+
+        # Process include option if given
+        if include:
+            models_to_check = []
+            for model in models.get_models():
+                if model_name(model) in include:
+                    models_to_check.append(model)
+
+        # As default, include all models.
+        else:
+            models_to_check = models.get_models()
+            # Process exclude option if given
+            if exclude:
+                for model in models_to_check:
+                    if model_name(model) in exclude:
+                        models_to_check.remove(model)
+                        self.stdout.write('%s will be skipped.' % model_name(model))
+
+        # Check model integrity
+        for model in models_to_check:
+            fail_count = self.check_model(model)
+            if fail_count > 0:
+                failed_model_count += 1
+                failed_instance_count += fail_count
+        self.stderr.write('Detected ' + str(failed_instance_count) + ' errors in ' + str(failed_model_count) + ' models')
 
     def check_model(self, model):
         """Check to see if models are proxy or not"""
