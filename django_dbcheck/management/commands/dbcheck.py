@@ -15,6 +15,10 @@ def model_name(model):
     """Grab the name of the model"""
     return '%s.%s' % (model._meta.app_label, model._meta.object_name)
 
+def app_name(model):
+    """Grab the app name of the model"""
+    return '%s' % model._meta.app_label
+
 
 class Command(BaseCommand):
     """Extend the commands available to ./manage.py"""
@@ -27,21 +31,29 @@ class Command(BaseCommand):
     # FIXME: These two options are in conflict. Find a way better way to do same thing without a conflict.
     option_list = NoArgsCommand.option_list + (
         make_option('-e', '--exclude', action='append', type='string', dest='exclude'),
-        make_option('-i', '--include', action='append', type='string', dest='include'),
+        make_option('-m', '--model', action='append', type='string', dest='include_model'),
+        make_option('-a', '--app', action='append', type='string', dest='include_app'),
     )
 
     def handle(self, *args, **options):
-        include = options.get('include', None) or []
+        include_app = options.get('include_app', None) or []
+        include_model = options.get('include_model', None) or []
         exclude = options.get('exclude', None) or []
 
         failed_instance_count = 0
         failed_model_count = 0
 
         # Process include option if given
-        if include:
+        if include_app:
             models_to_check = []
             for model in models.get_models():
-                if model_name(model) in include:
+                if app_name(model) in include_app:
+                    models_to_check.append(model)
+
+        elif include_model:
+            models_to_check = []
+            for model in models.get_models():
+                if model_name(model) in include_app:
                     models_to_check.append(model)
 
         # As default, include all models.
