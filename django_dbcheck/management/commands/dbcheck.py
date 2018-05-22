@@ -53,7 +53,7 @@ class Command(BaseCommand):
         # False if not (and print a message to stdout)
         def check_foreign_key(model, field):
             """Check that foreign keys refer to models that exist"""
-            foreign_model = field.related.parent_model
+            # foreign_model = field.related.parent_model
 
             def check_instance(instance):
                 """Check that the model attributes exist on the DB"""
@@ -64,10 +64,7 @@ class Command(BaseCommand):
                     getattr(instance, field.name)
                     return True
                 except ObjectDoesNotExist:
-                    self.stdout(str(model_name(model)) + ' with pk ' + str(
-                        instance.pk) + ' refers via field ' + field.name +
-                                ' to nonexistent ' + model_name(foreign_model) +
-                                ' with pk ' + getattr(instance, field.attname))
+                    self.stdout(str(model_name(model)) + ' with pk ' + str(instance.pk) + ' refers via field ' + field.name +' to nonexistent instance' +' with pk ' + getattr(instance, field.attname))
 
             return check_instance
 
