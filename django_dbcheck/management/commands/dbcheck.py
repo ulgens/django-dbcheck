@@ -7,7 +7,8 @@ from django.core.management import BaseCommand
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from optparse import make_option
-from progress import with_progress_meter
+
+from .progress import with_progress_meter
 
 
 def model_name(model):
