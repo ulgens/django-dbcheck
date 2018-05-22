@@ -3,8 +3,7 @@
 Checks the data is still conforming to the model bounds
 """
 
-from django.core.management.base import BaseCommand
-from django.core.management.base import NoArgsCommand
+from django.core.management import BaseCommand
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from optparse import make_option
@@ -23,7 +22,7 @@ class Command(BaseCommand):
     help = (
         'Checks constraints in the database and reports violations on stdout')
 
-    option_list = NoArgsCommand.option_list + (make_option('-e', '--exclude',
+    option_list = BaseCommand.option_list + (make_option('-e', '--exclude',
                                                            action='append', type='string', dest='exclude'),)
 
     def handle(self, *args, **options):
