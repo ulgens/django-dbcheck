@@ -23,8 +23,7 @@ class Command(BaseCommand):
     help = (
         'Checks constraints in the database and reports violations on stdout')
 
-    option_list = BaseCommand.option_list + (make_option('-e', '--exclude',
-                                                           action='append', type='string', dest='exclude'),)
+    option_list = make_option('-e', '--exclude', action='append', type='string', dest='exclude'),
 
     def handle(self, *args, **options):
 
