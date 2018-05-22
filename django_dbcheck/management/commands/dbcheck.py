@@ -6,6 +6,7 @@ Checks the data is still conforming to the model bounds
 from django.core.management import BaseCommand
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.apps import apps
 from optparse import make_option
 
 from .progress import with_progress_meter
@@ -20,36 +21,32 @@ class Command(BaseCommand):
     """Extend the commands available to ./manage.py"""
 
     args = '[-e|--exclude app_name.ModelName]'
-    help = (
-        'Checks constraints in the database and reports violations on stdout')
+    help = ('Checks constraints in the database and reports violations on stdout')
 
     option_list = make_option('-e', '--exclude', action='append', type='string', dest='exclude'),
 
     def handle(self, *args, **options):
-
-        exclude = options.get('exclude', None) or []
+        exclude = options.get('exclude') or []
 
         failed_instance_count = 0
         failed_model_count = 0
-        for app in models.get_apps():
-            for model in models.get_models(app):
-                if model_name(model) in exclude:
-                    self.stdout.write('Skipping model ' + str(model_name(model
-                                                                         )))
-                    continue
-                fail_count = self.check_model(model)
-                if fail_count > 0:
-                    failed_model_count += 1
-                    failed_instance_count += fail_count
-        self.stderr.write('Detected ' + str(failed_instance_count) +
-                          ' errors in ' + str(failed_model_count) + ' models')
+        for model in apps.get_models():
+            if model_name(model) in exclude:
+                self.stdout.write('Skipping model ' + str(model_name(model)))
+                continue
+
+            fail_count = self.check_model(model)
+            if fail_count > 0:
+                failed_model_count += 1
+                failed_instance_count += fail_count
+
+        self.stderr.write(f"Detected {failed_instance_count} errors in {failed_model_count} models")
 
     def check_model(self, model):
         """Check to see if models are proxy or not"""
         meta = model._meta
         if meta.proxy:
-            self.stdout.write(
-                'WARNING: proxy models not currently supported; ignored')
+            self.stdout.write('WARNING: proxy models not currently supported; ignored')
             return
 
         # Define all the checks we can do; they return True if they are ok,
@@ -76,8 +73,7 @@ class Command(BaseCommand):
 
         # Make a list of checks to run on each model instance
         checks = []
-        for field in (meta.local_fields + meta.local_many_to_many + meta.
-            virtual_fields):
+        for field in (meta.local_fields + meta.local_many_to_many + meta.virtual_fields):
             if isinstance(field, models.ForeignKey):
                 checks.append(check_foreign_key(model, field))
 
